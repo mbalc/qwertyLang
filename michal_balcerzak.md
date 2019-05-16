@@ -1,4 +1,6 @@
-# Gramatyka języka oraz opis języka
+# qwertyLang
+
+## Gramatyka języka oraz opis języka
 Gramatykę swojego języka oraz opisy opieram na opisie dostępnym
 na https://www.mimuw.edu.pl/~ben/Zajecia/Mrj2018/Latte/ ;
 opis ten będę dalej określał "stroną o Latte"
@@ -16,7 +18,7 @@ Język będzie się zachowywać zgodnie z:
 Dla jednoznaczności zamieszczam opis poniżej, przy poszczególnych sekcjach definicji
 naszej gramatyki - wobec uczynionych modyfikacji jest on więc też uzupełniony o kilka dopisków:
 
-## Struktura programu
+### Struktura programu
 Program w moim języku jest listą definicji funkcji.
 Na definicję funkcji składa się typ zwracanej wartości, nazwa, lista argumentów oraz ciało.
 Funkcje muszą mieć unikalne nazwy.
@@ -45,7 +47,7 @@ Arg.       Arg ::= Type Ident;
 separator  Arg "," ;
 
 ```
-## Instrukcje
+### Instrukcje
 Instrukcje: pusta,złożona,if,while,return jak w C/Javie, for jak w zadaniu.
 Dodatkowo instrukcjami są przypisanie, postinkrementacja, postdekrementacja
 (w wersji podstawowej języka l-wartościami są tylko zmienne).
@@ -111,7 +113,7 @@ SExp.      Stmt ::= Expr  ";" ;
 Range.     Range ::= "(" Integer ":" Integer ")" ;
 
 ```
-## Typy
+### Typy
 Typy int,boolean,void jak w Javie; string odpowiada String.
 Nie ma konwersji pomiedzy typami.
 Wprowadzenie niejawnych konwersji (rzutowań) będzie traktowane jako błąd, nie zaś ulepszenie.
@@ -137,7 +139,7 @@ TFun.      Type ::= "(" [Type] ")" "=>" Type ;
 separator  Type "," ;
 
 ```
-## Wyrażenia
+### Wyrażenia
 Podzbiór zbioru wyrażeń dostępnych w Javie, poszerzony o deklaracje lambd - podobnie do Javascript:
 Wyrażenie logiczne zwracają typ boolean i są obliczane leniwie
 (drugi argument nie jest wyliczany gdy pierwszy determinuje wartość wyrażenia).
@@ -181,7 +183,7 @@ coercions  Expr 6 ;
 
 separator  Expr "," ;
 ```
-## Napisy
+### Napisy
 Napisy podobnie jak w Javie, czyli zmienne typu string zawierają referencję do napisu,
 zaalokowanego na stercie.
 Napisy moga występować jako: literały, wartości zmiennych, argumentów i wyników funkcji
@@ -191,7 +193,7 @@ Napisy mogą być użyte jako argumenty wbudowanej funkcji printString
 Napisy mogą być konkatenowane przy pomocy operatora +.
 Wynikiem tej operacji jest nowy napis będący konkatenacją argumentów
 
-## Predefiniowane funkcje
+### Predefiniowane funkcje
 Są dostępne predefiniowane funkcje:
 ```
 void printInt(int)
@@ -239,7 +241,7 @@ comment    "/*" "*/" ;
 ```
 
 
-# Przykłady:
+## Przykłady:
 ### (tutaj zrzynka ze strony o Latte: przykład z Hello world)
 ```
 int main () {
@@ -295,7 +297,7 @@ int main () {
 }
 ```
 
-# Zrealizowany zakres i punktacja
+## Zrealizowany zakres i punktacja
 Planuję zrealizować następujące podpunkty:
 - Cały podzbiór na 15pkt poza 7a) (7b. - patrz For.)
 - Cały podzbiór na 20pkt
