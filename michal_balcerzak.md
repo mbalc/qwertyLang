@@ -297,8 +297,6 @@ int main () {
 
 # Zrealizowany zakres i punktacja
 Planuję zrealizować następujące podpunkty:
-- Cały podzbiór na 6pkt
-- Cały podzbiór na 12pkt
 - Cały podzbiór na 15pkt poza 7a) (7b. - patrz For.)
 - Cały podzbiór na 20pkt
 - Na 30pkt: 

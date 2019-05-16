@@ -1,0 +1,17 @@
+15.1.   Co najmniej trzy typy wartości: int, bool i string (to znaczy if 2+2 then _ parsuje się, ale wyrażenie ma niepoprawny typ).
+15.2.   Literały, arytmetyka, porównania.
+15.3.   Zmienne, operacja przypisania
+15.4.   Jawne wypisywanie wartości na wyjście (instrukcja lub wbudowana procedura print).
+15.5.   while, if (z else i bez, może być też składnia if _ elif _ else _ endif).
+15.6.   Funkcje lub procedury (bez zagnieżdżania), rekurencja.
+15.7b.  forexpr ze zmiennymi readonly
+
+20.8.   Przesłanianie identyfikatorów ze statycznym ich wiązaniem (zmienne lokalne i globalne lub zagnieżdżone procedury/funkcje).
+20.9.   Obsługa błędów wykonania, np. dzielenie przez zero (może być elegancki komunikat i zatrzymanie interpretera).
+20.10.  Funkcje przyjmujące i zwracające wartość dowolnych obsługiwanych typów (tzn. nie tylko procedury; za to mogą być tylko funkcje – jak w języku C).
+
+30.1.   statyczne typowanie
+30.2.   dowolnie zagnieżdżone definicje funkcji i statyczne wiązanie ich identykatorów
+30.3.   break i continue dla while
+30.4.   funkcje jako parametry i jako wyniki; closures, lambdas
+
