@@ -38,7 +38,7 @@ Program.   Program ::= [TopDef] ;
 
 FnDef.     TopDef ::= Type Ident Args Block ;
 
-Args.      Args ::= "(" [Arg] ")"
+Args.      Args ::= "(" [Arg] ")" ;
 
 separator nonempty TopDef "" ;
 
@@ -153,7 +153,7 @@ Lambda.    Lambda ::= Args "=>" Block ;
 EVar.      Expr6 ::= Ident ;
 
 -- 30pkt - lambdas
-ELambda    Expr6 ::= Lambda ;
+ELambda.    Expr6 ::= Lambda ;
 
 ELitInt.   Expr6 ::= Integer ;
 
