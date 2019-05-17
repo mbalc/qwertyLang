@@ -1,0 +1,6 @@
+# missing semicolon
+
+int main () {
+  print(13)
+  return 0
+}

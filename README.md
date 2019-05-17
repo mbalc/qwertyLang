@@ -1,0 +1,14 @@
+--  Still a number of features missing (commented out from syntax) but base skeleton done
+--  Main features that work:
+--  - printing (polymorphic)
+--  - Hiding of labels in store; blocks
+--  Main problems to fix:
+--  - Code should be better, more modular
+--  - More syntax should be in denotational style
+--  - Missing major features like loops&control, function results, typechecking
+--  - Some smaller features missing - left to do because it'd be better if I do
+--    - denotational refactor first, haven't managed to do it all and I wanted to rather
+--    - focus on features
+--  I see that after writing this code I understand the idea much better already,
+--    it's not a leap in the dark to write sth like this anymore and I'm really looking
+--    forward to finishing this project
