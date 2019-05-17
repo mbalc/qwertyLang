@@ -1,0 +1,14 @@
+src/grammar/*.o
+src/grammar/*.hi
+src/grammar/*.x
+src/grammar/*.y
+src/grammar/*.info
+src/grammar/AbsQwerty
+src/grammar/ErrM
+src/grammar/LexQwerty
+src/grammar/Makefile
+src/grammar/ParQwerty
+src/grammar/PrintQwerty
+src/grammar/SkelQwerty
+src/grammar/TestQwerty
+
