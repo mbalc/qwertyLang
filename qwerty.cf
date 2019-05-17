@@ -2,13 +2,13 @@
 
 entrypoints Program ;
 
-Program.   Program ::= [TopDef] ;
+Program.   Program ::= [FnDef] ;
 
-FnDef.     TopDef ::= Type Ident Args Block ;
+FnDef.     FnDef ::= Type Ident Args Block ;
 
 Args.      Args ::= "(" [Arg] ")" ;
 
-separator nonempty TopDef "" ;
+separator nonempty FnDef "" ;
 
 Arg.       Arg ::= Type Ident ;
 
@@ -24,6 +24,8 @@ separator  Stmt "" ;
 Empty.     Stmt ::= ";" ;
 
 BStmt.     Stmt ::= Block ;
+
+NestFunc.  Stmt ::= FnDef ;
 
 Decl.      Stmt ::= Type [Item] ";" ;
 

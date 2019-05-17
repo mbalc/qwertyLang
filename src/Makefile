@@ -6,15 +6,9 @@
 
 # Default goal.
 
-all : TestQwerty main
-
-main: main.hs
-	ghc -O --make main.hs -o main -igrammar
+all : TestQwerty
 
 # Rules for building the parser.
-
-ErrM.hs LexQwerty.x PrintQwerty.hs ParQwerty.y TestQwerty.hs : qwerty.cf
-	bnfc --haskell qwerty.cf
 
 %.hs : %.y
 	happy --ghc --coerce --array --info $<
