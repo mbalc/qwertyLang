@@ -9,7 +9,7 @@
 all : TestQwerty main
 
 main: main.hs
-	ghc -O --make main.hs -o main -igrammar
+	ghc --make main.hs -o main -igrammar
 
 # Rules for building the parser.
 

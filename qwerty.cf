@@ -2,22 +2,22 @@
 
 entrypoints Program ;
 
-Program.   Program ::= [FnDef] ;
+MainProg.   Program ::= [FnDef] ;
 
-FnDef.     FnDef ::= Type Ident Args Block ;
+TopDef.    FnDef ::= Type Ident Args Block ;
 
-Args.      Args ::= "(" [Arg] ")" ;
+FunArgs.   Args ::= "(" [Arg] ")" ;
 
 separator nonempty FnDef "" ;
 
-Arg.       Arg ::= Type Ident ;
+FunArg.    Arg ::= Type Ident ;
 
 separator  Arg "," ;
 
 
 -- statements ----------------------------------------------
 
-Block.     Block ::= "{" [Stmt] "}" ;
+ScopeBlock. Block ::= "{" [Stmt] "}" ;
 
 separator  Stmt "" ;
 
@@ -25,14 +25,14 @@ Empty.     Stmt ::= ";" ;
 
 BStmt.     Stmt ::= Block ;
 
-NestFunc.  Stmt ::= FnDef ;
+-- NestFunc.  Stmt ::= FnDef ; -- TODO
 
 Decl.      Stmt ::= Type [Item] ";" ;
 
 -- 15pkt - 7b) - rzuca Runtime Exception przy próbie nadpisania;
 -- tak jest najprościej, ale gdy okaże się, że będzie to dostatecznie łatwe do zrobienia,
 -- to wrzucę tego consta po prostu do typów
-ConstDecl. Stmt ::= "const" Type [Item] ";" ;
+-- ConstDecl. Stmt ::= "const" Type [Item] ";" ;
 
 NoInit.    Item ::= Ident ; 
 
@@ -48,11 +48,11 @@ Decr.      Stmt ::= Ident "--"  ";" ;
 
 Ret.       Stmt ::= "return" Expr ";" ;
 
-VRet.      Stmt ::= "return" ";" ;
+-- VRet.      Stmt ::= "return" ";" ;
 
-Break.     Stmt ::= "break" ";" ;
+-- Break.     Stmt ::= "break" ";" ;
 
-Continue.  Stmt ::= "continue" ";" ;
+-- Continue.  Stmt ::= "continue" ";" ;
 
 Cond.      Stmt ::= "if" "(" Expr ")" Stmt  ;
 
@@ -61,12 +61,12 @@ CondElse.  Stmt ::= "if" "(" Expr ")" Stmt "else" Stmt  ;
 While.     Stmt ::= "while" "(" Expr ")" Stmt ;
 
 -- 15pkt - 7b)
-For.       Stmt ::= "for" "(" Ident "in" Range ")" Stmt ;
+-- For.       Stmt ::= "for" "(" Ident "in" Range ")" Stmt ;
 
 SExp.      Stmt ::= Expr  ";" ;
 
 -- 15pkt - 7b); zakres liczbowy (dla "( a : b )" jesli a > b, to od b do a, wpp od a do b)
-Range.     Range ::= "(" Integer ":" Integer ")" ;
+-- ForRange.  Range ::= "(" Integer ":" Integer ")" ;
 
 
 -- Types ---------------------------------------------------
@@ -83,7 +83,7 @@ TBool.     Type ::= "boolean" ;
 TVoid.     Type ::= "void" ;
 
 -- 30pkt - lambdas
-TFun.      Type ::= "(" [Type] ")" "=>" Type ;
+-- TFun.      Type ::= "(" [Type] ")" "=>" Type ; -- TODO
 
 separator  Type "," ;
 
@@ -91,12 +91,12 @@ separator  Type "," ;
 -- Expressions ---------------------------------------------
 
 -- 30pkt - lambdas
-Lambda.    Lambda ::= Args "=>" Block ;
+-- DefLambda. Lambda ::= Args "=>" Block ; -- TODO
 
 EVar.      Expr6 ::= Ident ;
 
 -- 30pkt - lambdas
-ELambda.    Expr6 ::= Lambda ;
+-- ELambda.   Expr6 ::= Lambda ; -- TODO
 
 ELitInt.   Expr6 ::= Integer ;
 

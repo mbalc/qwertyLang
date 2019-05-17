@@ -1,7 +1,21 @@
+--  Still a number of features missing (commented out from syntax) but base skeleton done
+--  Main features that work:
+--  - printing (polymorphic)
+--  - Hiding of labels in store; blocks
+--  Main problems to fix:
+--  - Code should be better, more modular
+--  - More syntax should be in denotational style
+--  - Missing major features like loops&control, function results, typechecking
+--  - Some smaller features missing - left to do because it'd be better if I do
+--    - denotational refactor first, haven't managed to do it all and I wanted to rather
+--    - focus on features
+--  I see that after writing this code I understand the idea much better already,
+--    it's not a leap in the dark to write sth like this anymore and I'm really looking
+--    forward to finishing this project
 module Main where
 
 import System.Environment (getArgs, getProgName)
-import System.Exit (exitFailure, exitSuccess)
+import System.Exit (ExitCode(..), exitFailure, exitSuccess, exitWith)
 
 import qualified Data.Map as Map
 
@@ -41,12 +55,14 @@ instance Show Memo where
   show VoidMem = show "void"
 
 typecheck :: Program -> IO ()
-typecheck p = print "ok (todo)"
+typecheck p = return () -- print "ok (todo)"
 
 push :: Ident -> Memo -> QwertyExe ()
 push k v = do
   (m, ls, l) <- get
-  put (Map.insert l v m, Map.insert k l ls, l + 1)
+  case Map.lookup k ls of
+    Just l1 -> put (Map.insert l1 v m, ls, l)
+    Nothing -> put (Map.insert l v m, Map.insert k l ls, l + 1)
 
 pull :: Ident -> QwertyExe Memo
 pull t = do
@@ -65,10 +81,10 @@ mulOperator :: MulOp -> Integer -> Integer -> Integer
 mulOperator op =
   case op of
     Times -> (*)
-    Div -> quot
-    Mod -> mod
+    Div -> quot -- TODO div by 0
+    Mod -> mod -- TODO mod by 0
 
-relOperator :: RelOp -> Bool -> Bool -> Bool
+relOperator :: RelOp -> Integer -> Integer -> Bool
 relOperator op =
   case op of
     LTH -> (<)
@@ -89,7 +105,10 @@ instance Eval Expr where
   eval ELitFalse = return $ BoolMem False
   eval (EApp i l) = do
     FuncMem f <- pull i
+    (mem, oldLs, loc) <- get
     f l
+    (newMem, _, newL) <- get
+    put (newMem, oldLs, newL)
     return VoidMem
   eval (EString s) = return $ StringMem s
   eval (Neg e) = do
@@ -107,8 +126,8 @@ instance Eval Expr where
     IntMem q <- eval b
     return $ IntMem $ addOperator op p q
   eval (ERel a op b) = do
-    BoolMem p <- eval a
-    BoolMem q <- eval b
+    IntMem p <- eval a
+    IntMem q <- eval b
     return $ BoolMem $ relOperator op p q
   eval (EAnd a b) = do
     BoolMem p <- eval a
@@ -128,27 +147,98 @@ class Interpret a where
   interpret :: a -> QwertyExe ()
 
 matchFuncArg :: (Arg, Expr) -> QwertyExe ()
-matchFuncArg (Arg t id, v) = do
+matchFuncArg (FunArg t id, v) = do
   n <- eval v -- TODO low priority - dynamically typecheck because why not
   push id n
 
+declare :: Memo -> Item -> QwertyExe ()
+declare def (NoInit i) = push i def
+declare _ (Init i e) = do
+  v <- eval e
+  push i v
+
+instance Interpret Stmt where
+  interpret Empty = return ()
+  interpret (BStmt b) = interpret b
+  interpret (Ass i e) = do
+    v <- eval e
+    push i v
+  interpret (Ret e) = do
+    st <- eval e
+    liftIO exitSuccess
+  interpret (Decl t is) =
+    case t of
+      TInt -> mapM_ (declare $ IntMem 0) is
+      TStr -> mapM_ (declare (StringMem "")) is
+      TBool -> mapM_ (declare (BoolMem False)) is
+      TVoid -> mapM_ (declare VoidMem) is
+  interpret (Incr i) = do
+    IntMem v <- pull i
+    push i $ IntMem (v + 1)
+  interpret (Decr i) = do
+    IntMem v <- pull i
+    push i $ IntMem (v - 1)
+  interpret (SExp e) = do
+    eval e
+    return ()
+  interpret (Cond e s) = interpret (CondElse e s Empty)
+  interpret (CondElse e s1 s2) = do
+    BoolMem v <- eval e
+    (mem, oldLs, l) <- get
+    if v
+      then interpret s1
+      else interpret s2
+    (newMem, _, newL) <- get
+    put (newMem, oldLs, newL)
+  interpret (While e s) = do
+    BoolMem v <- eval e
+    (mem, oldLs, l) <- get
+    if v then do
+      interpret s
+      (newMem, _, newL) <- get
+      put (newMem, oldLs, newL)
+      interpret (While e s)
+    else do
+      (newMem, _, newL) <- get
+      put (newMem, oldLs, newL)
+
+--   interpret (NestFunc FnDef) =
+--   interpret (ConstDecl Type [Item]) =
+--   interpret VRet = 
+--   interpret Break = 
+--   interpret Continue = 
+--   interpret (For Ident Range Stmt) =
 instance Interpret FnDef where
-  interpret (FnDef t i (Args a) b) =
+  interpret (TopDef t i (FunArgs a) b) =
     push i $
     FuncMem $ \args -> do
       mapM_ matchFuncArg $ zip a args
       interpret b
 
+instance Interpret Block where
+  interpret (ScopeBlock ss) = do
+    (mem, oldLs, l) <- get
+    mapM_ interpret ss
+    (newMem, _, newL) <- get
+    put (newMem, oldLs, newL)
+
 instance Interpret Program where
-  interpret (Program defs) = do
+  interpret (MainProg defs) = do
     push (Ident "print") (FuncMem printer)
     mapM_ interpret defs
     FuncMem f <- pull $ Ident "main"
-    f []
+    result <- f []
+    liftIO exitSuccess
+      -- TODO prog statuses - code below but needs functions to return anything
+      -- IntMem 0 -> liftIO exitSuccess
+      -- IntMem n -> liftIO $ exitWith $ ExitFailure $ fromIntegral n
+      -- _ -> liftIO $ exitWith $ ExitFailure (-42) -- TODO custom runtime error
+
+startingState () = (Map.empty, Map.empty, 0)
 
 run :: QwertyExe () -> IO ()
 run prog = do
-  runStateT prog (Map.empty, Map.empty, 0)
+  runStateT prog (startingState ())
   exitSuccess
 
 parseFile :: String -> IO ()

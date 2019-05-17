@@ -14,59 +14,45 @@ transIdent x = case x of
   Ident string -> failure x
 transProgram :: Program -> Result
 transProgram x = case x of
-  Program fndefs -> failure x
+  MainProg fndefs -> failure x
 transFnDef :: FnDef -> Result
 transFnDef x = case x of
-  FnDef type_ ident args block -> failure x
+  TopDef type_ ident args block -> failure x
 transArgs :: Args -> Result
 transArgs x = case x of
-  Args args -> failure x
+  FunArgs args -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
-  Arg type_ ident -> failure x
+  FunArg type_ ident -> failure x
 transBlock :: Block -> Result
 transBlock x = case x of
-  Block stmts -> failure x
+  ScopeBlock stmts -> failure x
 transStmt :: Stmt -> Result
 transStmt x = case x of
   Empty -> failure x
   BStmt block -> failure x
-  NestFunc fndef -> failure x
   Decl type_ items -> failure x
-  ConstDecl type_ items -> failure x
   Ass ident expr -> failure x
   Incr ident -> failure x
   Decr ident -> failure x
   Ret expr -> failure x
-  VRet -> failure x
-  Break -> failure x
-  Continue -> failure x
   Cond expr stmt -> failure x
   CondElse expr stmt1 stmt2 -> failure x
   While expr stmt -> failure x
-  For ident range stmt -> failure x
   SExp expr -> failure x
 transItem :: Item -> Result
 transItem x = case x of
   NoInit ident -> failure x
   Init ident expr -> failure x
-transRange :: Range -> Result
-transRange x = case x of
-  Range integer1 integer2 -> failure x
 transType :: Type -> Result
 transType x = case x of
   TInt -> failure x
   TStr -> failure x
   TBool -> failure x
   TVoid -> failure x
-  TFun types type_ -> failure x
-transLambda :: Lambda -> Result
-transLambda x = case x of
-  Lambda args block -> failure x
 transExpr :: Expr -> Result
 transExpr x = case x of
   EVar ident -> failure x
-  ELambda lambda -> failure x
   ELitInt integer -> failure x
   ELitTrue -> failure x
   ELitFalse -> failure x

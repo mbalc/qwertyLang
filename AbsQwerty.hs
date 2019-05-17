@@ -6,56 +6,43 @@ module AbsQwerty where
 newtype Ident = Ident String
   deriving (Eq, Ord, Show, Read)
 
-data Program = Program [FnDef]
+data Program = MainProg [FnDef]
   deriving (Eq, Ord, Show, Read)
 
-data FnDef = FnDef Type Ident Args Block
+data FnDef = TopDef Type Ident Args Block
   deriving (Eq, Ord, Show, Read)
 
-data Args = Args [Arg]
+data Args = FunArgs [Arg]
   deriving (Eq, Ord, Show, Read)
 
-data Arg = Arg Type Ident
+data Arg = FunArg Type Ident
   deriving (Eq, Ord, Show, Read)
 
-data Block = Block [Stmt]
+data Block = ScopeBlock [Stmt]
   deriving (Eq, Ord, Show, Read)
 
 data Stmt
     = Empty
     | BStmt Block
-    | NestFunc FnDef
     | Decl Type [Item]
-    | ConstDecl Type [Item]
     | Ass Ident Expr
     | Incr Ident
     | Decr Ident
     | Ret Expr
-    | VRet
-    | Break
-    | Continue
     | Cond Expr Stmt
     | CondElse Expr Stmt Stmt
     | While Expr Stmt
-    | For Ident Range Stmt
     | SExp Expr
   deriving (Eq, Ord, Show, Read)
 
 data Item = NoInit Ident | Init Ident Expr
   deriving (Eq, Ord, Show, Read)
 
-data Range = Range Integer Integer
-  deriving (Eq, Ord, Show, Read)
-
-data Type = TInt | TStr | TBool | TVoid | TFun [Type] Type
-  deriving (Eq, Ord, Show, Read)
-
-data Lambda = Lambda Args Block
+data Type = TInt | TStr | TBool | TVoid
   deriving (Eq, Ord, Show, Read)
 
 data Expr
     = EVar Ident
-    | ELambda Lambda
     | ELitInt Integer
     | ELitTrue
     | ELitFalse

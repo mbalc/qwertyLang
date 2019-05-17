@@ -93,24 +93,24 @@ instance Print AbsQwerty.Ident where
 
 instance Print AbsQwerty.Program where
   prt i e = case e of
-    AbsQwerty.Program fndefs -> prPrec i 0 (concatD [prt 0 fndefs])
+    AbsQwerty.MainProg fndefs -> prPrec i 0 (concatD [prt 0 fndefs])
 
 instance Print AbsQwerty.FnDef where
   prt i e = case e of
-    AbsQwerty.FnDef type_ id args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, prt 0 args, prt 0 block])
+    AbsQwerty.TopDef type_ id args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, prt 0 args, prt 0 block])
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
 
 instance Print AbsQwerty.Args where
   prt i e = case e of
-    AbsQwerty.Args args -> prPrec i 0 (concatD [doc (showString "("), prt 0 args, doc (showString ")")])
+    AbsQwerty.FunArgs args -> prPrec i 0 (concatD [doc (showString "("), prt 0 args, doc (showString ")")])
 
 instance Print [AbsQwerty.FnDef] where
   prt = prtList
 
 instance Print AbsQwerty.Arg where
   prt i e = case e of
-    AbsQwerty.Arg type_ id -> prPrec i 0 (concatD [prt 0 type_, prt 0 id])
+    AbsQwerty.FunArg type_ id -> prPrec i 0 (concatD [prt 0 type_, prt 0 id])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
@@ -120,7 +120,7 @@ instance Print [AbsQwerty.Arg] where
 
 instance Print AbsQwerty.Block where
   prt i e = case e of
-    AbsQwerty.Block stmts -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "}")])
+    AbsQwerty.ScopeBlock stmts -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "}")])
 
 instance Print [AbsQwerty.Stmt] where
   prt = prtList
@@ -129,20 +129,14 @@ instance Print AbsQwerty.Stmt where
   prt i e = case e of
     AbsQwerty.Empty -> prPrec i 0 (concatD [doc (showString ";")])
     AbsQwerty.BStmt block -> prPrec i 0 (concatD [prt 0 block])
-    AbsQwerty.NestFunc fndef -> prPrec i 0 (concatD [prt 0 fndef])
     AbsQwerty.Decl type_ items -> prPrec i 0 (concatD [prt 0 type_, prt 0 items, doc (showString ";")])
-    AbsQwerty.ConstDecl type_ items -> prPrec i 0 (concatD [doc (showString "const"), prt 0 type_, prt 0 items, doc (showString ";")])
     AbsQwerty.Ass id expr -> prPrec i 0 (concatD [prt 0 id, doc (showString "="), prt 0 expr, doc (showString ";")])
     AbsQwerty.Incr id -> prPrec i 0 (concatD [prt 0 id, doc (showString "++"), doc (showString ";")])
     AbsQwerty.Decr id -> prPrec i 0 (concatD [prt 0 id, doc (showString "--"), doc (showString ";")])
     AbsQwerty.Ret expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
-    AbsQwerty.VRet -> prPrec i 0 (concatD [doc (showString "return"), doc (showString ";")])
-    AbsQwerty.Break -> prPrec i 0 (concatD [doc (showString "break"), doc (showString ";")])
-    AbsQwerty.Continue -> prPrec i 0 (concatD [doc (showString "continue"), doc (showString ";")])
     AbsQwerty.Cond expr stmt -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt])
     AbsQwerty.CondElse expr stmt1 stmt2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt1, doc (showString "else"), prt 0 stmt2])
     AbsQwerty.While expr stmt -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt])
-    AbsQwerty.For id range stmt -> prPrec i 0 (concatD [doc (showString "for"), doc (showString "("), prt 0 id, doc (showString "in"), prt 0 range, doc (showString ")"), prt 0 stmt])
     AbsQwerty.SExp expr -> prPrec i 0 (concatD [prt 0 expr, doc (showString ";")])
   prtList _ [] = concatD []
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
@@ -157,17 +151,12 @@ instance Print AbsQwerty.Item where
 instance Print [AbsQwerty.Item] where
   prt = prtList
 
-instance Print AbsQwerty.Range where
-  prt i e = case e of
-    AbsQwerty.Range n1 n2 -> prPrec i 0 (concatD [doc (showString "("), prt 0 n1, doc (showString ":"), prt 0 n2, doc (showString ")")])
-
 instance Print AbsQwerty.Type where
   prt i e = case e of
     AbsQwerty.TInt -> prPrec i 0 (concatD [doc (showString "int")])
     AbsQwerty.TStr -> prPrec i 0 (concatD [doc (showString "string")])
     AbsQwerty.TBool -> prPrec i 0 (concatD [doc (showString "boolean")])
     AbsQwerty.TVoid -> prPrec i 0 (concatD [doc (showString "void")])
-    AbsQwerty.TFun types type_ -> prPrec i 0 (concatD [doc (showString "("), prt 0 types, doc (showString ")"), doc (showString "=>"), prt 0 type_])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
@@ -175,14 +164,9 @@ instance Print AbsQwerty.Type where
 instance Print [AbsQwerty.Type] where
   prt = prtList
 
-instance Print AbsQwerty.Lambda where
-  prt i e = case e of
-    AbsQwerty.Lambda args block -> prPrec i 0 (concatD [prt 0 args, doc (showString "=>"), prt 0 block])
-
 instance Print AbsQwerty.Expr where
   prt i e = case e of
     AbsQwerty.EVar id -> prPrec i 6 (concatD [prt 0 id])
-    AbsQwerty.ELambda lambda -> prPrec i 6 (concatD [prt 0 lambda])
     AbsQwerty.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
     AbsQwerty.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
     AbsQwerty.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
