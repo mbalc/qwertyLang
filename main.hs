@@ -21,6 +21,7 @@ import qualified Data.Map as Map
 
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 
 import AbsQwerty
@@ -28,7 +29,9 @@ import ParQwerty
 
 import ErrM
 
-type QwertyExe a = StateT AppStore IO a
+type QwertyExe = StateT AppStore (ExceptT QwertyError IO)
+
+type QwertyError = String
 
 type AppStore = (AppState, Locs, Loc)
 
@@ -39,7 +42,7 @@ data Memo
   | BoolMem Bool
   | StringMem String
   | FuncMem Func
-  | VoidMem -- TODO return types
+  | VoidMem
 
 type Func = [Expr] -> QwertyExe ()
 
@@ -57,19 +60,24 @@ instance Show Memo where
 typecheck :: Program -> IO ()
 typecheck p = return () -- print "ok (todo)"
 
-push :: Ident -> Memo -> QwertyExe ()
-push k v = do
+mapLookup :: Ord a => QwertyError -> a -> Map.Map a b -> ExceptT QwertyError IO b
+mapLookup e k m = case Map.lookup k m of
+    Just a -> return a
+    Nothing -> throwE e
+
+-- store modification
+storePut :: Ident -> Memo -> QwertyExe ()
+storePut k v = do
   (m, ls, l) <- get
   case Map.lookup k ls of
     Just l1 -> put (Map.insert l1 v m, ls, l)
     Nothing -> put (Map.insert l v m, Map.insert k l ls, l + 1)
 
-pull :: Ident -> QwertyExe Memo
-pull t = do
+storeGet :: Ident -> QwertyExe Memo
+storeGet (Ident k) = do
   (s, ls, p) <- get
-  let Just l = Map.lookup t ls
-  let Just v = Map.lookup l s
-  return v
+  l <- lift $ mapLookup ("variable " ++ k ++ " not declared") (Ident k) ls
+  lift $ mapLookup "dupa2" l s
 
 addOperator :: AddOp -> Integer -> Integer -> Integer
 addOperator op =
@@ -81,8 +89,8 @@ mulOperator :: MulOp -> Integer -> Integer -> Integer
 mulOperator op =
   case op of
     Times -> (*)
-    Div -> quot -- TODO div by 0
-    Mod -> mod -- TODO mod by 0
+    Div -> div
+    Mod -> rem
 
 relOperator :: RelOp -> Integer -> Integer -> Bool
 relOperator op =
@@ -98,13 +106,13 @@ class Eval a where
   eval :: a -> QwertyExe Memo
 
 instance Eval Expr where
-  eval (EVar i) = pull i
+  eval (EVar i) = storeGet i
         --   eval ELambda Lambda
   eval (ELitInt i) = return $ IntMem i
   eval ELitTrue = return $ BoolMem True
   eval ELitFalse = return $ BoolMem False
   eval (EApp i l) = do
-    FuncMem f <- pull i
+    FuncMem f <- storeGet i
     (mem, oldLs, loc) <- get
     f l
     (newMem, _, newL) <- get
@@ -149,20 +157,20 @@ class Interpret a where
 matchFuncArg :: (Arg, Expr) -> QwertyExe ()
 matchFuncArg (FunArg t id, v) = do
   n <- eval v -- TODO low priority - dynamically typecheck because why not
-  push id n
+  storePut id n
 
 declare :: Memo -> Item -> QwertyExe ()
-declare def (NoInit i) = push i def
+declare def (NoInit i) = storePut i def
 declare _ (Init i e) = do
   v <- eval e
-  push i v
+  storePut i v
 
 instance Interpret Stmt where
   interpret Empty = return ()
   interpret (BStmt b) = interpret b
   interpret (Ass i e) = do
     v <- eval e
-    push i v
+    storePut i v
   interpret (Ret e) = do
     st <- eval e
     liftIO exitSuccess
@@ -173,11 +181,11 @@ instance Interpret Stmt where
       TBool -> mapM_ (declare (BoolMem False)) is
       TVoid -> mapM_ (declare VoidMem) is
   interpret (Incr i) = do
-    IntMem v <- pull i
-    push i $ IntMem (v + 1)
+    IntMem v <- storeGet i
+    storePut i $ IntMem (v + 1)
   interpret (Decr i) = do
-    IntMem v <- pull i
-    push i $ IntMem (v - 1)
+    IntMem v <- storeGet i
+    storePut i $ IntMem (v - 1)
   interpret (SExp e) = do
     eval e
     return ()
@@ -210,7 +218,7 @@ instance Interpret Stmt where
 --   interpret (For Ident Range Stmt) =
 instance Interpret FnDef where
   interpret (TopDef t i (FunArgs a) b) =
-    push i $
+    storePut i $
     FuncMem $ \args -> do
       mapM_ matchFuncArg $ zip a args
       interpret b
@@ -224,9 +232,9 @@ instance Interpret Block where
 
 instance Interpret Program where
   interpret (MainProg defs) = do
-    push (Ident "print") (FuncMem printer)
+    storePut (Ident "print") (FuncMem printer)
     mapM_ interpret defs
-    FuncMem f <- pull $ Ident "main"
+    FuncMem f <- storeGet $ Ident "main"
     result <- f []
     liftIO exitSuccess
       -- TODO prog statuses - code below but needs functions to return anything
@@ -238,7 +246,7 @@ startingState () = (Map.empty, Map.empty, 0)
 
 run :: QwertyExe () -> IO ()
 run prog = do
-  runStateT prog (startingState ())
+  runExceptT $ runStateT prog (startingState ())
   exitSuccess
 
 parseFile :: String -> IO ()
