@@ -174,7 +174,7 @@ instance Print AbsQwerty.Expr where
     AbsQwerty.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
     AbsQwerty.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
     AbsQwerty.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
-    AbsQwerty.EApp id exprs -> prPrec i 6 (concatD [prt 0 id, doc (showString "("), prt 0 exprs, doc (showString ")")])
+    AbsQwerty.EApp expr exprs -> prPrec i 6 (concatD [prt 0 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
     AbsQwerty.EString str -> prPrec i 6 (concatD [prt 0 str])
     AbsQwerty.Neg expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])
     AbsQwerty.Not expr -> prPrec i 5 (concatD [doc (showString "!"), prt 6 expr])

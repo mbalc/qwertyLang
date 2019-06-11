@@ -49,7 +49,7 @@ data Expr
     | ELitInt Integer
     | ELitTrue
     | ELitFalse
-    | EApp Ident [Expr]
+    | EApp Expr [Expr]
     | EString String
     | Neg Expr
     | Not Expr

@@ -103,7 +103,7 @@ ELitTrue.  Expr6 ::= "true" ;
 
 ELitFalse. Expr6 ::= "false" ;
 
-EApp.      Expr6 ::= Ident "(" [Expr] ")" ;
+EApp.      Expr6 ::= Expr "(" [Expr] ")" ;
 
 EString.   Expr6 ::= String ;
 

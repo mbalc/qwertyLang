@@ -60,7 +60,7 @@ transExpr x = case x of
   ELitInt integer -> failure x
   ELitTrue -> failure x
   ELitFalse -> failure x
-  EApp ident exprs -> failure x
+  EApp expr exprs -> failure x
   EString string -> failure x
   Neg expr -> failure x
   Not expr -> failure x

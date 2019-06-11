@@ -7,9 +7,12 @@
 # Default goal.
 
 all : TestQwerty main
+debug : TestQwerty maindebug
 
 main: main.hs
 	ghc --make main.hs -o interpreter -igrammar
+maindebug: main.hs
+	ghc --make main.hs -o interpreter -igrammar -prof -fprof-auto-calls
 
 # Rules for building the parser.
 

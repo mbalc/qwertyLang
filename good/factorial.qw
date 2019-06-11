@@ -5,9 +5,9 @@
 # part. 20.10
 
 int main () { # some functionalities temporarily disabled
-#  print(fact(7)) ;
+  print(fact(7)) ;
   fact(7) ;
-#  print(factr(7)) ;
+  print(factr(7)) ;
   return 0 ;
 }
 
@@ -19,7 +19,6 @@ int fact (int n) {
     r = r * i ;
     i++ ;
   }
-  print (r) ; # temp
   return r ;
 }
 

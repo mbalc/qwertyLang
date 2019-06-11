@@ -74,7 +74,7 @@ mapLookup e k m = case Map.lookup k m of
 -- store modification
 storePut :: Ident -> Memo -> QwertyExe Memo
 storePut k v = do
-  traceStack "dupa" (liftIO $ traceIO $ "assigning to " ++ show k ++ show v)
+  debug ("assigning to " ++ show k ++ show v)
   (m, ls, l) <- get
   case Map.lookup k ls of
     Just l1 -> do put (Map.insert l1 v m, ls, l); return v
@@ -122,19 +122,19 @@ instance Eval Expr where
   eval (ELambda argdecls block) = do -- TODO wtf - doesn't work
     return $ FuncMem $
       \argdefs -> runFuncLocal $ do
-          liftIO $ traceStack "call lambda" (putStrLn "")
+          debug "call lambda"
           -- TODO assign vars to args
           interpret block
   eval ELitTrue = return $ BoolMem True
   eval ELitFalse = return $ BoolMem False
-  eval (EApp identifier arglist) = do
-    storedfunc <- storeGet identifier
-    liftIO $ traceStack ("call func application" ++ show identifier ++ " with " ++ show arglist) $ putStrLn "tea" 
+  eval (EApp expression arglist) = do
+    storedfunc <- eval expression
+    debug ("call func application" ++ show expression ++ " with " ++ show arglist)
     case storedfunc of
       FuncMem func -> do
         result <- func arglist
         case result of 
-          Nothing -> lift $ throwE $ "Missing return in " ++ show identifier
+          Nothing -> lift $ throwE $ "Missing return in " ++ show expression
           Just out -> return out
       m -> lift $ throwE $ "Attempted to call " ++ show m ++ " which is not a function"
   eval (EString s) = return $ StringMem s
@@ -185,9 +185,9 @@ matchFuncArg (FunArg t id, v) = do
   storePut id n
 
 declare :: Memo -> Item -> QwertyExe Memo
-declare defaultDef (NoInit i) = do liftIO $ putStrLn "a noinitlift here" ; storePut i defaultDef
+declare defaultDef (NoInit i) = do debug "a noinitlift here" ; storePut i defaultDef
 declare _ (Init i e) = do -- TODO what about type mismatch here?
-  liftIO $ putStrLn "a lift here"
+  debug "a lift here"
   v <- eval e
   storePut i v
 
@@ -244,7 +244,7 @@ instance Interpret Stmt where
   interpret (While e s) = do
     BoolMem v <- eval e -- TODO TODO
     if v
-      then runFuncLocal $ interpret s `mplus` interpret (While e s)
+      then runFuncLocal $ interpret s `myMPlus` interpret (While e s)
       else return Nothing
 
   interpret (NestFunc topdef) = interpret topdef
@@ -255,32 +255,57 @@ instance Interpret Stmt where
 --   interpret (For Ident Range Stmt) =
 instance Interpret FnDef where
   interpret (TopDef t i (FunArgs a) b) = do
-    liftIO (putStrLn "udpap")
+    debug "udpap"
     storePut i $
       FuncMem $ \args -> runFuncLocal $ do
         mapM_ matchFuncArg $ zip a args
         interpret b
     return Nothing
 
+-- had problems adapting regular mplus
+myMPlus m1 m2 = do
+  v1 <- m1
+  case v1 of
+    Just n -> return $ Just n
+    _ -> m2
+    
+
 instance Interpret Block where
-  interpret (ScopeBlock []) = return $ Just $ IntMem 42
-  interpret (ScopeBlock (s:ss)) = mplus (interpret s) $ interpret $ ScopeBlock ss
+  interpret (ScopeBlock []) = return Nothing
+  interpret (ScopeBlock (s:ss)) = interpret s `myMPlus` (interpret (ScopeBlock ss))
+
+  -- interpret (ScopeBlock (s:ss)) = let u = interpret s in do
+  --   out <- interpret s `myMPlus` (interpret (ScopeBlock ss))
+  --   w <- interpret s
+  --   debug (show w ++ "nextplx")
+  --   return out
+
+  -- interpret (ScopeBlock (s:ss)) = do
+  --   u <- interpret s
+  --   debug (show u ++ "nextplx")
+  --   case u of
+  --     Just n -> return $ Just n
+  --     _ -> (interpret $ ScopeBlock ss)
 
 instance Interpret Program where
   interpret (MainProg defs) = do
     storePut (Ident "print") (FuncMem printer)
     mapM_ interpret defs
     storemain <- storeGet $ Ident "main"
+    debug "Launching `main`!"
     case storemain of
       FuncMem f -> f []
       _ -> lift $ throwE "`main` is not a function"
 
 startingState = (Map.empty, Map.empty, 0)
 
+-- debug a = liftIO $ traceStack a $ putStrLn ""
+debug a = return ()
+
 run :: QwertyExe Returned -> IO ()
 run prog = do
   returnValue <- liftIO $ runExceptT $ runStateT prog startingState
-  liftIO $ putStrLn $ show returnValue
+  debug $ show returnValue
   case returnValue of
     Right (Just (IntMem 0), _) -> exitSuccess
     Right (Just (IntMem n), _) -> ioError $ userError $ "Status " ++ show n ++ " returned from `main`"
@@ -301,7 +326,7 @@ parseFile file = do
          exitFailure
        Ok tree -> do
          typecheck tree
-         putStrLn $ show tree
+         debug $ show tree
          run $ interpret tree
 
 main :: IO ()
