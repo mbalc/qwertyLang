@@ -39,10 +39,6 @@ type QwertyExe = StateT AppStore Result
 
 type QwertyError = String
 
-type AppStore = (AppState, Locs, Loc)
-
-type AppState = Map.Map Loc Memo
-
 data Memo
   = IntMem Integer
   | BoolMem Bool
@@ -51,10 +47,6 @@ data Memo
   | VoidMem
 
 type Func = [Expr] -> QwertyExe Returned
-
-type Locs = Map.Map Ident Loc
-
-type Loc = Integer
 
 instance Show Memo where
   show (IntMem i) = show i
@@ -73,23 +65,36 @@ mapLookup e k m = case Map.lookup k m of
 
 -- store management
 -- decided not to use ReaderT - very little boilerplate to adapt StateT, not worth refactoring, easier debug, more control
+type AppStore = (AppState, Locs, Loc)
+type AppState = Map.Map Loc Memo
+
+type Locs = Map.Map Ident Loc
+type Loc = Integer
+
+storeDeclare :: Ident -> QwertyExe Returned
+storeDeclare k = do
+  debug ("new declaration for " ++ show k)
+  (m, ls, l) <- get
+  put (m, Map.insert k l ls, l + 1); return Nothing
+
 storePut :: Ident -> Memo -> QwertyExe Memo
 storePut k v = do
   debug ("assigning to " ++ show k ++ show v)
   (m, ls, l) <- get
   case Map.lookup k ls of
     Just l1 -> do put (Map.insert l1 v m, ls, l); return v
-    Nothing -> do put (Map.insert l v m, Map.insert k l ls, l + 1); return v
+    Nothing -> storeDeclare k >> storePut k v
 
 storeGet :: Ident -> QwertyExe Memo
 storeGet (Ident k) = do
   (s, ls, p) <- get
   l <- lift $ mapLookup ("variable " ++ k ++ " not declared") (Ident k) ls
-  lift $ mapLookup ("value of variable " ++ k ++ " not defined (this should never happen - we always pass default values)") l s
+  lift $ mapLookup ("variable " ++ k ++ " declared but not defined") l s
 
-runFuncLocal :: QwertyExe Returned -> QwertyExe Returned
-runFuncLocal future = do
+runFuncLocal :: AppStore -> QwertyExe Returned -> QwertyExe Returned
+runFuncLocal (statMem, statLs, statLoc) future = do
   (mem, oldLs, loc) <- get
+  put (mem, statLs, loc)
   result <- future
   (newMem, _, newL) <- get
   put (newMem, oldLs, newL)
@@ -98,7 +103,7 @@ runFuncLocal future = do
 
 -- expr evaluation - common boilerplate
 operatorError :: String -> [Memo] -> Result Memo
-operatorError disp ms = throwE $ "attempted to use " ++ disp ++ " on incompatible types: " ++ unwords $ map show ms
+operatorError disp ms = throwE $ "attempted to use " ++ disp ++ " on incompatible types: " ++ (unwords $ map show ms)
 
 evalAddOperator :: AddOp -> Memo -> Memo -> Result Memo
 evalAddOperator Plus (IntMem x) (IntMem y) = return $ IntMem $ x + y
@@ -139,15 +144,17 @@ class Eval a where
 instance Eval Expr where
   eval (EVar identifier) = storeGet identifier
   eval (ELitInt integer) = return $ IntMem integer
-  eval (ELambda (FunArgs argdecls) block) = return $ FuncMem $
-    \argdefs -> do
-        debug "calling lambda function"
-        -- TODO closures
-        -- TODO assign vars to args
-    -- FuncMem $ \args -> runFuncLocal $ do
-        mapM_ matchFuncArg $ zip argdecls argdefs
-    --   interpret b
-        interpret block
+  eval (ELambda (FunArgs argdecls) block) = do
+    store <- get
+    return $ FuncMem $
+      \argdefs -> runFuncLocal store $ do
+          debug "calling lambda function"
+          -- TODO closures
+          -- TODO assign vars to args
+      -- FuncMem $ \args -> runFuncLocal $ do
+          mapM_ matchFuncArg $ zip argdecls argdefs
+      --   interpret b
+          interpret block
   eval ELitTrue = return $ BoolMem True
   eval ELitFalse = return $ BoolMem False
   eval (EApp expression arglist) = do
@@ -155,7 +162,7 @@ instance Eval Expr where
     debug ("call func application" ++ show expression ++ " with " ++ show arglist)
     case storedfunc of
       FuncMem func -> do
-        result <- runFuncLocal $ func arglist
+        result <- func arglist
         case result of 
           Nothing -> lift $ throwE $ "Missing return in " ++ show expression
           Just out -> return out
@@ -201,12 +208,14 @@ matchFuncArg (FunArg t id, v) = do
   n <- eval v -- TODO low priority - dynamically typecheck because why not
   storePut id n
 
-declare :: Memo -> Item -> QwertyExe Memo
-declare defaultDef (NoInit i) = do debug "a noinitlift here" ; storePut i defaultDef
+declare :: Maybe Memo -> Item -> QwertyExe Returned
+declare Nothing (NoInit i) = do debug "a noinitlift here" ; storeDeclare i
+declare (Just defaultDef) (NoInit i) = do debug "a noinitlift here" ; storePut i defaultDef; return $ Just defaultDef
 declare _ (Init i e) = do -- TODO what about type mismatch here?
   debug "a lift here"
   v <- eval e
-  storePut i v
+  result <- storeDeclare i >> storePut i v
+  return $ Just result 
 
 
 class Interpret a where
@@ -214,7 +223,7 @@ class Interpret a where
 
 instance Interpret Stmt where
   interpret Empty = return Nothing
-  interpret (BStmt b) = runFuncLocal $ interpret b
+  interpret (BStmt b) = get >>= \store -> runFuncLocal store $ interpret b
   interpret (Ass i e) = do
     v <- eval e
     storePut i v
@@ -225,11 +234,11 @@ instance Interpret Stmt where
   interpret VRet = return $ Just VoidMem
   interpret (Decl t defs) = do
     case t of
-      TInt -> mapM_ (declare $ IntMem 0) defs
-      TStr -> mapM_ (declare (StringMem "")) defs
-      TBool -> mapM_ (declare (BoolMem False)) defs
-      TVoid -> mapM_ (declare VoidMem) defs
-      TFun argtypes rettype -> mapM_ (declare $ FuncMem (\_ -> return Nothing)) defs
+      TInt -> mapM_ (declare $ Just $ IntMem 0) defs
+      TStr -> mapM_ (declare Nothing) defs
+      TBool -> mapM_ (declare (Just $ BoolMem False)) defs
+      TVoid -> mapM_ (declare $ Just VoidMem) defs
+      TFun argtypes rettype -> mapM_ (declare Nothing) defs
     return Nothing
   interpret (Incr i) = interpret (Ass i (EAdd (EVar i) Plus (ELitInt 1)))
   interpret (Decr i) = interpret (Ass i (EAdd (EVar i) Minus (ELitInt 1)))
@@ -242,14 +251,16 @@ instance Interpret Stmt where
   interpret (Cond e s) = interpret (CondElse e s Empty)
   interpret (CondElse e s1 s2) = do
     v <- eval e
-    runFuncLocal $ case v of
+    store <- get 
+    runFuncLocal store $ case v of
       BoolMem True -> interpret s1
       BoolMem False -> interpret s2
       _ -> lift $ throwE "Bad expression type in `if` condition"
   interpret (While e s) = do
     v <- eval e
-    runFuncLocal $ case v of
-      BoolMem True -> runFuncLocal $ interpret s `myMPlus` interpret (While e s)
+    store <- get 
+    runFuncLocal store $ case v of
+      BoolMem True -> runFuncLocal store $ interpret s `myMPlus` interpret (While e s)
       BoolMem False -> return Nothing
       _ -> lift $ throwE "Bad expression type in `while` condition"
 
@@ -296,14 +307,15 @@ instance Interpret Program where
     mapM_ interpret defs
     storemain <- storeGet $ Ident "main"
     debug "Launching `main`!"
+    store <- get
     case storemain of
-      FuncMem f -> f []
+      FuncMem f -> runFuncLocal store $ f []
       _ -> lift $ throwE "`main` is not a function"
 
 startingState = (Map.empty, Map.empty, 0)
 
--- debug a = liftIO $ traceStack a $ putStrLn ""
-debug a = return ()
+debug a = liftIO $ traceStack a $ putStrLn ""
+-- debug a = return ()
 
 run :: QwertyExe Returned -> IO ()
 run prog = do
