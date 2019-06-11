@@ -50,7 +50,7 @@ Assert.    Stmt ::= "assert" Expr ";" ;
 
 Ret.       Stmt ::= "return" Expr ";" ;
 
--- VRet.      Stmt ::= "return" ";" ;
+VRet.      Stmt ::= "return" ";" ;
 
 -- Break.     Stmt ::= "break" ";" ;
 
@@ -92,7 +92,9 @@ separator  Type "," ;
 
 -- Expressions ---------------------------------------------
 
-EVar.      Expr6 ::= Ident ;
+EVar.      Expr7 ::= Ident ;
+
+EApp.      Expr7 ::= Expr7 "(" [Expr] ")" ;
 
 -- 30pkt - lambdas
 ELambda.   Expr6 ::= Args "=>" Block ;
@@ -102,8 +104,6 @@ ELitInt.   Expr6 ::= Integer ;
 ELitTrue.  Expr6 ::= "true" ;
 
 ELitFalse. Expr6 ::= "false" ;
-
-EApp.      Expr6 ::= Expr "(" [Expr] ")" ;
 
 EString.   Expr6 ::= String ;
 
@@ -121,7 +121,7 @@ EAnd.      Expr1 ::= Expr2 "&&" Expr1 ;
 
 EOr.       Expr ::= Expr1 "||" Expr ;
 
-coercions  Expr 6 ;
+coercions  Expr 7 ;
 
 separator  Expr "," ;
 

@@ -71,7 +71,8 @@ mapLookup e k m = case Map.lookup k m of
   Just a -> return a
   Nothing -> throwE e
 
--- store modification
+-- store management
+-- decided not to use ReaderT - very little boilerplate to adapt StateT, not worth refactoring, easier debug, more control
 storePut :: Ident -> Memo -> QwertyExe Memo
 storePut k v = do
   debug ("assigning to " ++ show k ++ show v)
@@ -86,14 +87,24 @@ storeGet (Ident k) = do
   l <- lift $ mapLookup ("variable " ++ k ++ " not declared") (Ident k) ls
   lift $ mapLookup ("value of variable " ++ k ++ " not defined (this should never happen - we always pass default values)") l s
 
+runFuncLocal :: QwertyExe Returned -> QwertyExe Returned
+runFuncLocal future = do
+  (mem, oldLs, loc) <- get
+  result <- future
+  (newMem, _, newL) <- get
+  put (newMem, oldLs, newL)
+  return result
+
+
+-- expr evaluation - common boilerplate
+operatorError :: String -> [Memo] -> Result Memo
+operatorError disp ms = throwE $ "attempted to use " ++ disp ++ " on incompatible types: " ++ unwords $ map show ms
+
 evalAddOperator :: AddOp -> Memo -> Memo -> Result Memo
 evalAddOperator Plus (IntMem x) (IntMem y) = return $ IntMem $ x + y
 evalAddOperator Plus (StringMem x) (StringMem y) = return $ StringMem $ x ++ y
 evalAddOperator Minus (IntMem x) (IntMem y) = return $ IntMem $ x - y
 evalAddOperator op x y = operatorError (show op) [x, y]
-
-operatorError :: String -> [Memo] -> Result Memo
-operatorError disp ms = throwE $ "attempted to use " ++ disp ++ " on incompatible types: " ++ (unwords $ map show ms)
 
 evalMulOperator :: MulOp -> Memo -> Memo -> Result Memo
 evalMulOperator Times (IntMem x) (IntMem y) = return $ IntMem $ x * y
@@ -102,6 +113,14 @@ evalMulOperator Div (IntMem x) (IntMem y) = return $ IntMem $ div x y
 evalMulOperator Mod (IntMem x) (IntMem 0) = throwE "modulo by zero attempt"
 evalMulOperator Mod (IntMem x) (IntMem y) = return $ IntMem $ mod x y
 evalMulOperator op x y = operatorError (show op) [x, y]
+
+evalBoolOperator :: (Bool -> Bool -> Bool) -> Expr -> Expr -> QwertyError -> QwertyExe Memo
+evalBoolOperator op a b opErrTxt = do
+    p <- eval a
+    q <- eval b
+    case (p, q) of
+      (BoolMem x, BoolMem y) -> return $ BoolMem $ op x y
+      _ -> lift $ operatorError opErrTxt [p, q]
 
 relOperator :: Ord a => RelOp -> a -> a -> Bool
 relOperator op =
@@ -113,18 +132,22 @@ relOperator op =
     EQU -> (==)
     NE -> (/=)
 
+-- main evaluation
 class Eval a where
   eval :: a -> QwertyExe Memo
 
 instance Eval Expr where
   eval (EVar identifier) = storeGet identifier
   eval (ELitInt integer) = return $ IntMem integer
-  eval (ELambda argdecls block) = do -- TODO wtf - doesn't work
-    return $ FuncMem $
-      \argdefs -> runFuncLocal $ do
-          debug "call lambda"
-          -- TODO assign vars to args
-          interpret block
+  eval (ELambda (FunArgs argdecls) block) = return $ FuncMem $
+    \argdefs -> do
+        debug "calling lambda function"
+        -- TODO closures
+        -- TODO assign vars to args
+    -- FuncMem $ \args -> runFuncLocal $ do
+        mapM_ matchFuncArg $ zip argdecls argdefs
+    --   interpret b
+        interpret block
   eval ELitTrue = return $ BoolMem True
   eval ELitFalse = return $ BoolMem False
   eval (EApp expression arglist) = do
@@ -132,7 +155,7 @@ instance Eval Expr where
     debug ("call func application" ++ show expression ++ " with " ++ show arglist)
     case storedfunc of
       FuncMem func -> do
-        result <- func arglist
+        result <- runFuncLocal $ func arglist
         case result of 
           Nothing -> lift $ throwE $ "Missing return in " ++ show expression
           Just out -> return out
@@ -157,21 +180,15 @@ instance Eval Expr where
     q <- eval b
     lift $ evalAddOperator op p q
   eval (ERel a op b) = do
-      x <- eval a
-      y <- eval b
-      case (x, y) of
-        (StringMem p, StringMem q) -> return $ BoolMem $ relOperator op p q
-        (IntMem p, IntMem q) -> return $ BoolMem $ relOperator op p q
-        (BoolMem p, BoolMem q) -> return $ BoolMem $ relOperator op p q
-        _ -> lift $ operatorError (show op) [x, y]
-  eval (EAnd a b) = do
-    BoolMem p <- eval a -- TODO TODO
-    BoolMem q <- eval b -- TODO TODO
-    return $ BoolMem (p && q)
-  eval (EOr a b) = do
-    BoolMem p <- eval a -- TODO TODO
-    BoolMem q <- eval b -- TODO TODO
-    return $ BoolMem (p || q)
+      p <- eval a
+      q <- eval b
+      case (p, q) of
+        (StringMem x, StringMem y) -> return $ BoolMem $ relOperator op x y
+        (IntMem x, IntMem y) -> return $ BoolMem $ relOperator op x y
+        (BoolMem x, BoolMem y) -> return $ BoolMem $ relOperator op x y
+        _ -> lift $ operatorError (show op) [p, q]
+  eval (EAnd a b) = evalBoolOperator (&&) a b (show $ EAnd a b)
+  eval (EOr a b) = evalBoolOperator (||) a b (show $ EOr a b)
 
 printer :: Func
 printer es = do
@@ -191,14 +208,6 @@ declare _ (Init i e) = do -- TODO what about type mismatch here?
   v <- eval e
   storePut i v
 
-runFuncLocal :: QwertyExe Returned -> QwertyExe Returned
-runFuncLocal future = do
-  (mem, oldLs, loc) <- get
-  result <- future
-  (newMem, _, newL) <- get
-  put (newMem, oldLs, newL)
-  return result
-
 
 class Interpret a where
   interpret :: a -> QwertyExe Returned
@@ -213,6 +222,7 @@ instance Interpret Stmt where
   interpret (Ret e) = do
     st <- eval e
     return $ Just st
+  interpret VRet = return $ Just VoidMem
   interpret (Decl t defs) = do
     case t of
       TInt -> mapM_ (declare $ IntMem 0) defs
@@ -221,14 +231,8 @@ instance Interpret Stmt where
       TVoid -> mapM_ (declare VoidMem) defs
       TFun argtypes rettype -> mapM_ (declare $ FuncMem (\_ -> return Nothing)) defs
     return Nothing
-  interpret (Incr i) = do
-    IntMem v <- storeGet i -- TODO TODO
-    storePut i $ IntMem (v + 1)
-    return Nothing
-  interpret (Decr i) = do
-    IntMem v <- storeGet i -- TODO TODO
-    storePut i $ IntMem (v - 1)
-    return Nothing
+  interpret (Incr i) = interpret (Ass i (EAdd (EVar i) Plus (ELitInt 1)))
+  interpret (Decr i) = interpret (Ass i (EAdd (EVar i) Minus (ELitInt 1)))
   interpret (Assert e) = do
     v <- eval e
     case v of
@@ -237,29 +241,28 @@ instance Interpret Stmt where
   interpret (SExp expression) = do eval expression; return Nothing  -- 'dangling' expression
   interpret (Cond e s) = interpret (CondElse e s Empty)
   interpret (CondElse e s1 s2) = do
-    BoolMem v <- eval e -- TODO TODO
-    runFuncLocal $ if v
-      then interpret s1
-      else interpret s2
+    v <- eval e
+    runFuncLocal $ case v of
+      BoolMem True -> interpret s1
+      BoolMem False -> interpret s2
+      _ -> lift $ throwE "Bad expression type in `if` condition"
   interpret (While e s) = do
-    BoolMem v <- eval e -- TODO TODO
-    if v
-      then runFuncLocal $ interpret s `myMPlus` interpret (While e s)
-      else return Nothing
+    v <- eval e
+    runFuncLocal $ case v of
+      BoolMem True -> runFuncLocal $ interpret s `myMPlus` interpret (While e s)
+      BoolMem False -> return Nothing
+      _ -> lift $ throwE "Bad expression type in `while` condition"
 
   interpret (NestFunc topdef) = interpret topdef
 --   interpret (ConstDecl Type [Item]) =
---   interpret VRet = 
 --   interpret Break = 
 --   interpret Continue = 
 --   interpret (For Ident Range Stmt) =
 instance Interpret FnDef where
-  interpret (TopDef t i (FunArgs a) b) = do
+  interpret (TopDef t i args block) = do
     debug "udpap"
-    storePut i $
-      FuncMem $ \args -> runFuncLocal $ do
-        mapM_ matchFuncArg $ zip a args
-        interpret b
+    func <- eval $ ELambda args block
+    storePut i func
     return Nothing
 
 -- had problems adapting regular mplus
@@ -272,7 +275,7 @@ myMPlus m1 m2 = do
 
 instance Interpret Block where
   interpret (ScopeBlock []) = return Nothing
-  interpret (ScopeBlock (s:ss)) = interpret s `myMPlus` (interpret (ScopeBlock ss))
+  interpret (ScopeBlock (s:ss)) = interpret s `myMPlus` interpret (ScopeBlock ss)
 
   -- interpret (ScopeBlock (s:ss)) = let u = interpret s in do
   --   out <- interpret s `myMPlus` (interpret (ScopeBlock ss))
@@ -320,8 +323,6 @@ parseFile file = do
     case pProgram ts of
        Bad s -> do
          putStrLn "Parse failed\n"
-        --  putStrLn "Tokens:"
-        --  print ts
          putStrLn s
          exitFailure
        Ok tree -> do

@@ -38,6 +38,7 @@ transStmt x = case x of
   Decr ident -> failure x
   Assert expr -> failure x
   Ret expr -> failure x
+  VRet -> failure x
   Cond expr stmt -> failure x
   CondElse expr stmt1 stmt2 -> failure x
   While expr stmt -> failure x
@@ -56,11 +57,11 @@ transType x = case x of
 transExpr :: Expr -> Result
 transExpr x = case x of
   EVar ident -> failure x
+  EApp expr exprs -> failure x
   ELambda args block -> failure x
   ELitInt integer -> failure x
   ELitTrue -> failure x
   ELitFalse -> failure x
-  EApp expr exprs -> failure x
   EString string -> failure x
   Neg expr -> failure x
   Not expr -> failure x

@@ -136,6 +136,7 @@ instance Print AbsQwerty.Stmt where
     AbsQwerty.Decr id -> prPrec i 0 (concatD [prt 0 id, doc (showString "--"), doc (showString ";")])
     AbsQwerty.Assert expr -> prPrec i 0 (concatD [doc (showString "assert"), prt 0 expr, doc (showString ";")])
     AbsQwerty.Ret expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
+    AbsQwerty.VRet -> prPrec i 0 (concatD [doc (showString "return"), doc (showString ";")])
     AbsQwerty.Cond expr stmt -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt])
     AbsQwerty.CondElse expr stmt1 stmt2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt1, doc (showString "else"), prt 0 stmt2])
     AbsQwerty.While expr stmt -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt])
@@ -169,12 +170,12 @@ instance Print [AbsQwerty.Type] where
 
 instance Print AbsQwerty.Expr where
   prt i e = case e of
-    AbsQwerty.EVar id -> prPrec i 6 (concatD [prt 0 id])
+    AbsQwerty.EVar id -> prPrec i 7 (concatD [prt 0 id])
+    AbsQwerty.EApp expr exprs -> prPrec i 7 (concatD [prt 7 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
     AbsQwerty.ELambda args block -> prPrec i 6 (concatD [prt 0 args, doc (showString "=>"), prt 0 block])
     AbsQwerty.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
     AbsQwerty.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
     AbsQwerty.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
-    AbsQwerty.EApp expr exprs -> prPrec i 6 (concatD [prt 0 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
     AbsQwerty.EString str -> prPrec i 6 (concatD [prt 0 str])
     AbsQwerty.Neg expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])
     AbsQwerty.Not expr -> prPrec i 5 (concatD [doc (showString "!"), prt 6 expr])

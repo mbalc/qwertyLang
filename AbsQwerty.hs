@@ -31,6 +31,7 @@ data Stmt
     | Decr Ident
     | Assert Expr
     | Ret Expr
+    | VRet
     | Cond Expr Stmt
     | CondElse Expr Stmt Stmt
     | While Expr Stmt
@@ -45,11 +46,11 @@ data Type = TInt | TStr | TBool | TVoid | TFun [Type] Type
 
 data Expr
     = EVar Ident
+    | EApp Expr [Expr]
     | ELambda Args Block
     | ELitInt Integer
     | ELitTrue
     | ELitFalse
-    | EApp Expr [Expr]
     | EString String
     | Neg Expr
     | Not Expr
