@@ -129,10 +129,12 @@ instance Print AbsQwerty.Stmt where
   prt i e = case e of
     AbsQwerty.Empty -> prPrec i 0 (concatD [doc (showString ";")])
     AbsQwerty.BStmt block -> prPrec i 0 (concatD [prt 0 block])
+    AbsQwerty.NestFunc fndef -> prPrec i 0 (concatD [prt 0 fndef])
     AbsQwerty.Decl type_ items -> prPrec i 0 (concatD [prt 0 type_, prt 0 items, doc (showString ";")])
     AbsQwerty.Ass id expr -> prPrec i 0 (concatD [prt 0 id, doc (showString "="), prt 0 expr, doc (showString ";")])
     AbsQwerty.Incr id -> prPrec i 0 (concatD [prt 0 id, doc (showString "++"), doc (showString ";")])
     AbsQwerty.Decr id -> prPrec i 0 (concatD [prt 0 id, doc (showString "--"), doc (showString ";")])
+    AbsQwerty.Assert expr -> prPrec i 0 (concatD [doc (showString "assert"), prt 0 expr, doc (showString ";")])
     AbsQwerty.Ret expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
     AbsQwerty.Cond expr stmt -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt])
     AbsQwerty.CondElse expr stmt1 stmt2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt1, doc (showString "else"), prt 0 stmt2])
@@ -157,6 +159,7 @@ instance Print AbsQwerty.Type where
     AbsQwerty.TStr -> prPrec i 0 (concatD [doc (showString "string")])
     AbsQwerty.TBool -> prPrec i 0 (concatD [doc (showString "boolean")])
     AbsQwerty.TVoid -> prPrec i 0 (concatD [doc (showString "void")])
+    AbsQwerty.TFun types type_ -> prPrec i 0 (concatD [doc (showString "(("), prt 0 types, doc (showString ")"), doc (showString "=>"), prt 0 type_, doc (showString ")")])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
@@ -167,6 +170,7 @@ instance Print [AbsQwerty.Type] where
 instance Print AbsQwerty.Expr where
   prt i e = case e of
     AbsQwerty.EVar id -> prPrec i 6 (concatD [prt 0 id])
+    AbsQwerty.ELambda args block -> prPrec i 6 (concatD [prt 0 args, doc (showString "=>"), prt 0 block])
     AbsQwerty.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
     AbsQwerty.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
     AbsQwerty.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])

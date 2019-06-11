@@ -25,7 +25,7 @@ Empty.     Stmt ::= ";" ;
 
 BStmt.     Stmt ::= Block ;
 
--- NestFunc.  Stmt ::= FnDef ; -- TODO
+NestFunc.  Stmt ::= FnDef ; -- TODO
 
 Decl.      Stmt ::= Type [Item] ";" ;
 
@@ -45,6 +45,8 @@ Ass.       Stmt ::= Ident "=" Expr  ";" ;
 Incr.      Stmt ::= Ident "++"  ";" ;
 
 Decr.      Stmt ::= Ident "--"  ";" ;
+
+Assert.    Stmt ::= "assert" Expr ";" ;
 
 Ret.       Stmt ::= "return" Expr ";" ;
 
@@ -83,20 +85,17 @@ TBool.     Type ::= "boolean" ;
 TVoid.     Type ::= "void" ;
 
 -- 30pkt - lambdas
--- TFun.      Type ::= "(" [Type] ")" "=>" Type ; -- TODO
+TFun.      Type ::= "((" [Type] ")" "=>" Type ")";
 
 separator  Type "," ;
 
 
 -- Expressions ---------------------------------------------
 
--- 30pkt - lambdas
--- DefLambda. Lambda ::= Args "=>" Block ; -- TODO
-
 EVar.      Expr6 ::= Ident ;
 
 -- 30pkt - lambdas
--- ELambda.   Expr6 ::= Lambda ; -- TODO
+ELambda.   Expr6 ::= Args "=>" Block ;
 
 ELitInt.   Expr6 ::= Integer ;
 

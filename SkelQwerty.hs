@@ -31,10 +31,12 @@ transStmt :: Stmt -> Result
 transStmt x = case x of
   Empty -> failure x
   BStmt block -> failure x
+  NestFunc fndef -> failure x
   Decl type_ items -> failure x
   Ass ident expr -> failure x
   Incr ident -> failure x
   Decr ident -> failure x
+  Assert expr -> failure x
   Ret expr -> failure x
   Cond expr stmt -> failure x
   CondElse expr stmt1 stmt2 -> failure x
@@ -50,9 +52,11 @@ transType x = case x of
   TStr -> failure x
   TBool -> failure x
   TVoid -> failure x
+  TFun types type_ -> failure x
 transExpr :: Expr -> Result
 transExpr x = case x of
   EVar ident -> failure x
+  ELambda args block -> failure x
   ELitInt integer -> failure x
   ELitTrue -> failure x
   ELitFalse -> failure x

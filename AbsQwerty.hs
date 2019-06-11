@@ -24,10 +24,12 @@ data Block = ScopeBlock [Stmt]
 data Stmt
     = Empty
     | BStmt Block
+    | NestFunc FnDef
     | Decl Type [Item]
     | Ass Ident Expr
     | Incr Ident
     | Decr Ident
+    | Assert Expr
     | Ret Expr
     | Cond Expr Stmt
     | CondElse Expr Stmt Stmt
@@ -38,11 +40,12 @@ data Stmt
 data Item = NoInit Ident | Init Ident Expr
   deriving (Eq, Ord, Show, Read)
 
-data Type = TInt | TStr | TBool | TVoid
+data Type = TInt | TStr | TBool | TVoid | TFun [Type] Type
   deriving (Eq, Ord, Show, Read)
 
 data Expr
     = EVar Ident
+    | ELambda Args Block
     | ELitInt Integer
     | ELitTrue
     | ELitFalse
