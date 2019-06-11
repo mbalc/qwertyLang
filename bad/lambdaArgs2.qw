@@ -1,0 +1,12 @@
+int main () {
+  print("should throw that too few arguments were passed");
+
+  ((int) => ((int) => int)) hello = (int a) => {
+    return (int b) => { print (b, a); return 3; } ;
+  };
+
+  int b = hello () (); # missing arguments
+
+  return 0;
+}
+

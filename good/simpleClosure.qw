@@ -1,0 +1,25 @@
+int main () {
+  (() => (() => int)) outer () {
+    int a = 1;
+    (() => int) inner () {
+      return a;
+    }
+    return inner;
+  }
+
+  (() => int) a1 = outer(); // execute outer to get inner 
+  assert (a1() == 1);
+
+  (() => (() => int)) outer = () => {
+    int a = 2;
+    (() => int) inner = () => {
+      return a;
+    };
+    return inner;
+  };
+
+  (() => int) a2 = outer(); // execute outer to get inner 
+  assert (a2() == 2);
+
+  return 0;
+}

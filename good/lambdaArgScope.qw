@@ -1,0 +1,13 @@
+int main () {
+  print("should print 3, then 5");
+
+  ((int) => ((int) => int)) hello = (int a) => {
+    return (int b) => { print (b, a); return a + b; } ;
+  };
+
+  int b = hello (5) (3);
+  assert (b == 8);
+
+  return 0;
+}
+

@@ -1,0 +1,11 @@
+int main () {
+  print("should throw that too many arguments were passed");
+  (() => (() => int)) hello = () => {
+    return () => { print ("ahah"); return 3; } ;
+  };
+
+  int a = hello (3) ("staś"); # too many args
+
+  return 0;
+}
+

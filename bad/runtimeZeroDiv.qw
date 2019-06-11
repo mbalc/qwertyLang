@@ -1,0 +1,13 @@
+int main () {
+  print("this program should write 'ok', then exit with division by zero error") ;
+  int a,b ;
+  a = 4 ;
+  b = 0 ;
+  if (b / a == 0) {
+    print("ok", b / a) ;
+  }
+  if (a / b > 0) {
+    print("not ok") ;
+  }
+  return 0 ;
+}

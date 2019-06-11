@@ -1,0 +1,14 @@
+int main () {
+  int x = 10;
+  int f() {
+    return x;
+  }
+
+  int g() {
+    int x = 20;
+    return f();
+  }
+
+  assert (g() == 10);
+  return 0;
+}

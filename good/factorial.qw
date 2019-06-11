@@ -5,9 +5,11 @@
 # part. 20.10
 
 int main () { # some functionalities temporarily disabled
+  print("should print '5040' twice");
   print(fact(7)) ;
-  fact(7) ;
+  assert (fact(7) == 5040);
   print(factr(7)) ;
+  assert (factr(7) == 5040);
   return 0 ;
 }
 

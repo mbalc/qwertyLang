@@ -1,0 +1,37 @@
+int main () {
+  int test2 (int a, int b) {
+    int test3 (string c) {
+      int b = 13;
+      d = 46;
+      print ("should be 'test'", c);
+      assert(c == "test");
+      print ("should be 13", b);
+      assert(b == 13);
+      return a;
+    }
+
+    int d = 57;
+    
+    print ("should be 24", b);
+    assert (b == 24);
+    print ("should be 57", d);
+    assert (d == 57);
+    int e = test3 ("test");
+    print ("should be 24", b);
+    assert (b == 24);
+    print ("should be 57", d);
+    assert (d == 57);
+    b = e;
+    print ("should be 35", b);
+    assert (b == 35);
+    a = 80;
+    return a;
+  }
+
+  int a = 35, b = 24;
+  print ("should be 80", test2 (a, b)) ;
+  assert(test2 (a, b) == 80) ;
+
+  return 0 ;
+}
+

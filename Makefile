@@ -2,12 +2,30 @@
 
 # List of goals not corresponding to file names.
 
-.PHONY : all clean distclean
+.PHONY : all clean distclean test
 
 # Default goal.
 
 all : TestQwerty main
 debug : TestQwerty maindebug
+
+
+test: testgood testbad
+
+testgood: all
+	for file in good/* ;\
+	do \
+		echo -e "\n    *** STARTING " $$file " ***" ; \
+		timeout 2 ./interpreter "$$file" ; \
+	done
+
+testbad: all
+	for file in bad/* ;\
+	do \
+		echo -e "\n    *** STARTING " $$file " ***" ; \
+		timeout 2 ./interpreter "$$file" ; \
+	done
+
 
 main: main.hs
 	ghc --make main.hs -o interpreter -igrammar

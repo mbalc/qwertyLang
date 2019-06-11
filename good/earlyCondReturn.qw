@@ -1,0 +1,8 @@
+int main () {
+  print("should just quit with OK status");
+  if (true) {
+    return 0;
+  }
+  return 1;
+}
+

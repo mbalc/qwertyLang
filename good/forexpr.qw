@@ -1,0 +1,7 @@
+# req. 15.4
+# req. 15.7b
+
+int main () {
+  for (i in (5 : 1)) printInt(i) ;
+}
+

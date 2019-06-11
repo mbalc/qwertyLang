@@ -1,0 +1,19 @@
+int main () {
+  ((int, int) => int) add = (int a, int b) => { return a + b ; };
+  ((int, int) => int) sub = (int a, int b) => { return a - b ; };
+
+  (( ((int, int) => int), int, int, int, int) => int) miniReduce
+  = ( ((int, int) => int) func, int a, int b, int c, int d) => {
+    int x = func(a, b);
+    int y = func(x, c);
+    return func(y, d);
+  };
+
+  assert(miniReduce(add, 3, 3, 3, 3) == 12);
+  assert(miniReduce(sub, 3, 3, 3, 3) == -6);
+
+  assert(miniReduce( (int a, int b) => { return a * b ; },  3, 3, 3, 3) == 81);
+  assert(miniReduce( (int a, int b) => { return a / b ; },  3, 3, 3, 3) == 0);
+
+  return 0;
+}

@@ -1,0 +1,11 @@
+int main () {
+  print("should crash - wrong type of condition bexpr");
+
+  if (2 + 2) {
+    print ("not ok");
+    return 0;
+  }
+  print ("not ok");
+  return 0;
+}
+  

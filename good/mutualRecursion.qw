@@ -1,0 +1,16 @@
+int main () {
+  print("should loop until stack ends");
+
+  (() => (() => int)) hello, welcome;
+  hello = () => {
+    return () => { welcome() (); return 3; } ;
+  };
+  welcome = () => {
+    return () => { hello () (); return 4; } ;
+  };
+
+  hello () ();
+
+  return 1;
+}
+

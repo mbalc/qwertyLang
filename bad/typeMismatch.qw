@@ -1,0 +1,7 @@
+# assigning string to int
+
+int main () {
+  int a = "ala" ;
+  print ( a ) ;
+  return 0 ;
+}

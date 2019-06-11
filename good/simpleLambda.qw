@@ -1,0 +1,21 @@
+int main () {
+  print("should print func echo, then 'hehe', then 'ahah'");
+
+  (() => (() => int)) hello = () => {
+    return () => { print ("ahah"); return 3; } ;
+  };
+  (() => (() => int)) welcome = () => {
+    return () => { print ("hehe"); return 4; } ;
+  };
+
+  print(hello);
+
+  int a = welcome () ();
+  int b = hello () ();
+
+  assert(a == 4);
+  assert(b == 3);
+
+  return 0;
+}
+

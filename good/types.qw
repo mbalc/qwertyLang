@@ -1,0 +1,29 @@
+# req. 15.1-3
+# req. 15.5
+
+int main () {
+  int a,b,c ;
+  a = 3 ;
+  b = -5 ;
+  c = 7 ;
+  if ( ( a + b ) * c != -14) {
+    return 1;
+  }
+  if (a * b != -15) {
+    return 1;
+  }
+  string p,q,r ;
+  p = "alama" ;
+  q = "kota" ;
+  r = p + q ;
+  if (r != "alamakota")  {
+    return 1;
+  }
+  boolean n ;
+  n = true ;
+  if (n == false)  {
+    return 1;
+  }
+  return 0 ;
+}
+

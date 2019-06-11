@@ -1,0 +1,6 @@
+# v is undeclared
+
+int main () {
+  print(v) ;
+  return 0 ;
+}

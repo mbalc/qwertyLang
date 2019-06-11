@@ -1,0 +1,12 @@
+int main () {
+  print("should throw that arguments with wrong types were passed");
+
+  ((int) => ((int) => int)) hello = (int a) => {
+    return (int b) => { print (b, a); return 3; } ;
+  };
+
+  int b = hello ("ala") ( (int a) => { return a + 4 ; } ); # missing arguments
+
+  return 0;
+}
+
